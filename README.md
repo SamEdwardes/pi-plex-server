@@ -10,6 +10,9 @@ Files for my Raspberry Pi Plex Server
 # Turn off (wait for 10 beeps of the green light)
 sudo poweroff
 
+# Or...
+sudo shutdown -h now
+
 # Restart
 sudo reboot
 
