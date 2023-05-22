@@ -43,6 +43,16 @@ scp ~/movies/hello-world.mp4 pi@plexpi.local:/mnt/plex-usb/movies
 scp -r ~/movies/hello pi@plexpi.local:/mnt/plex-usb/movies
 ```
 
+### NFS
+
+Reapply mounts:
+
+```bash
+sudo systemctl restart nfs-server
+# Or...
+sudo exportfs -ra
+```
+
 ## Setup
 
 ### OS
@@ -55,23 +65,6 @@ Install the Raspberry Pi Imager <https://www.raspberrypi.com/software/>.
 
 ```bash
 ssh pi@plexpi.local
-```
-
-### Mount USB
-
-- <https://raspberrytips.com/mount-usb-drive-raspberry-pi/>
-
-```bash
-sudo fdisk -l
-# Device     Boot  Start       End   Sectors   Size Id Type
-# /dev/sda1       522240 484519679 483997440 230.8G  c W95 FAT32 (LBA)
-
-sudo ls -l /dev/disk/by-uuid/
-# total 0
-# lrwxrwxrwx 1 root root 15 Feb 26 20:40 37CA-39EC -> ../../mmcblk0p1
-# lrwxrwxrwx 1 root root 10 Feb 26 21:09 C5F1-A0AD -> ../../sda1
-# lrwxrwxrwx 1 root root 15 Feb 26 20:40 a4af13c6-d165-4cbd-a9f6-c961fef8255d -> ../../mmcblk0p2
-sudo mkdir /mnt/plex-usb
 ```
 
 ### Install Plex
@@ -102,22 +95,53 @@ Other directions:
 
 ### Mount USB
 
-### Install NFS
+- <https://raspberrytips.com/mount-usb-drive-raspberry-pi/>
 
 ```bash
-# https://pimylifeup.com/raspberry-pi-nfs/
-sudo apt-get install -y nfs-kernel-server
-sudo mkdir /mnt/nfsshare
-sudo chown -R ubuntu:ubuntu /mnt/nfsshare
-sudo find /mnt/nfsshare/ -type d -exec chmod 755 {} \;
-sudo find /mnt/nfsshare/ -type f -exec chmod 644 {} \;
-# /etc/exports
-# /mnt/nfsshare *(rw,all_squash,insecure,async,no_subtree_check,anonuid=1000,anongid=1000)
-sudo exportfs -ra
+sudo fdisk -l
+# Device     Boot  Start       End   Sectors   Size Id Type
+# /dev/sda1       522240 484519679 483997440 230.8G  c W95 FAT32 (LBA)
+
+sudo ls -l /dev/disk/by-uuid/
+# total 0
+# lrwxrwxrwx 1 root root 15 Feb 26 20:40 37CA-39EC -> ../../mmcblk0p1
+# lrwxrwxrwx 1 root root 10 Feb 26 21:09 C5F1-A0AD -> ../../sda1
+# lrwxrwxrwx 1 root root 15 Feb 26 20:40 a4af13c6-d165-4cbd-a9f6-c961fef8255d -> ../../mmcblk0p2
+sudo mkdir /mnt/plex-usb
 ```
 
+**/etc/fstab**
 
+```
+UUID=C5F1-A0AD /mnt/plex-usb vfat uid=pi,gid=pi 0 0
+```
 
+### Install NFS
+
+- https://pimylifeup.com/raspberry-pi-nfs/
+- https://www.digitalocean.com/community/tutorials/how-to-set-up-an-nfs-mount-on-ubuntu-20-04
+- https://superuser.com/questions/657071/mount-nfs-rpc-statd-is-not-running-but-is-required-for-remote-locking
+
+Install nfs-server:
+
+```bash
+sudo apt-get install -y nfs-kernel-server
+
+# Had to run this to get `mount` working on host
+systemctl start rpc-statd
+```
+
+Configure: **/etc/exports**
+
+```
+/mnt/plex-usb *(rw,all_squash,insecure,async,no_subtree_check,anonuid=1000,anongid=1000)
+```
+
+Apply changes:
+
+```bash
+sudo exportfs -ra
+```
 
 ## Helpful resources
 
@@ -127,5 +151,3 @@ sudo exportfs -ra
 ## Tips
 
 - Run `sudo poweroff` to turn off. Wait until the green light stops flashing.
-
-
